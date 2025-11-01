@@ -1,0 +1,277 @@
+from bpmn import BPMNDiagram, Task, Gateway, Event, SequenceFlow, Lane, Pool
+import datetime
+
+def create_grocery_shopping_bpmn():
+    # Создаем BPMN диаграмму
+    diagram = BPMNDiagram()
+    diagram.name = "Процесс похода в магазин за продуктами"
+    diagram.documentation = "Детальный процесс похода в магазин от осознания необходимости до размещения продуктов дома"
+    
+    # Создаем пул (основной процесс)
+    main_pool = Pool("Потребитель")
+    diagram.pools.append(main_pool)
+    
+    # Создаем дорожки
+    planning_lane = Lane("Планирование и подготовка (Дома)")
+    shopping_lane = Lane("Дорога и покупки (Вне дома)")
+    completion_lane = Lane("Завершение (Дома)")
+    
+    main_pool.lanes.extend([planning_lane, shopping_lane, completion_lane])
+    
+    # === НАЧАЛЬНОЕ СОБЫТИЕ ===
+    start_event = Event("Осознание необходимости закупки продуктов", event_type="start")
+    planning_lane.elements.append(start_event)
+    
+    # === ДОРОЖКА 1: ПЛАНИРОВАНИЕ И ПОДГОТОВКА ===
+    
+    # Задачи планирования
+    task1 = Task("Сформулировать потребность")
+    planning_lane.elements.append(task1)
+    
+    task2 = Task("Провести инвентаризацию существующих запасов")
+    planning_lane.elements.append(task2)
+    
+    task3 = Task("Составить список необходимых продуктов")
+    planning_lane.elements.append(task3)
+    
+    task4 = Task("Определить предпочтительный магазин", task_type="user")
+    planning_lane.elements.append(task4)
+    
+    task5 = Task("Определить бюджет на покупки", task_type="user")
+    planning_lane.elements.append(task5)
+    
+    task6 = Task("Спланировать время визита", task_type="user")
+    planning_lane.elements.append(task6)
+    
+    # Шлюз проверки средств
+    gateway1 = Gateway("Проверить наличие средств/носителей для оплаты", gateway_type="exclusive")
+    planning_lane.elements.append(gateway1)
+    
+    task7_yes = Task("Переход к следующей задаче")
+    planning_lane.elements.append(task7_yes)
+    
+    task7_no = Task("Найти банкомат/банковскую карту/наличные")
+    planning_lane.elements.append(task7_no)
+    
+    # Подготовка
+    task8 = Task("Подготовить экосредства (сумки, рюкзаки, термопакеты)")
+    planning_lane.elements.append(task8)
+    
+    task9 = Task("Взять ключи, кошелек, телефон")
+    planning_lane.elements.append(task9)
+    
+    # === ДОРОЖКА 2: ДОРОГА И ПОКУПКИ ===
+    
+    task10 = Task("Проследовать до транспорта")
+    shopping_lane.elements.append(task10)
+    
+    task11 = Task("Добраться до магазина")
+    shopping_lane.elements.append(task11)
+    
+    # Шлюз проверки работы магазина
+    gateway2 = Gateway("Магазин работает?", gateway_type="exclusive")
+    shopping_lane.elements.append(gateway2)
+    
+    task12_yes = Task("Войти в магазин")
+    shopping_lane.elements.append(task12_yes)
+    
+    escalation_event = Event("Принять решение: ждать/выбрать другой магазин", event_type="escalation")
+    shopping_lane.elements.append(escalation_event)
+    
+    task13 = Task("Взять тележку или корзину")
+    shopping_lane.elements.append(task13)
+    
+    # Подпроцесс покупки товаров (цикл)
+    shopping_subprocess = Task("Процесс выбора и покупки товаров", task_type="subprocess")
+    shopping_subprocess.documentation = "Многоэкземплярный цикл для каждого товара в списке"
+    shopping_lane.elements.append(shopping_subprocess)
+    
+    # Задачи внутри подпроцесса покупок
+    task14_1 = Task("Найти товар в зале")
+    task14_2 = Gateway("Товар в наличии и соответствует требованиям?", gateway_type="exclusive")
+    task14_3_yes = Task("Положить товар в тележку")
+    task14_4_yes = Task("Отметить товар в списке как купленный")
+    task14_3_no = Task("Принять решение: найти аналог, отложить покупку или исключить", task_type="user")
+    
+    # Импульсные покупки
+    task15 = Task("Проверить наличие незапланированных товаров", task_type="user")
+    shopping_lane.elements.append(task15)
+    
+    # Кассовая зона
+    task16 = Task("Направиться к кассовой зоне")
+    shopping_lane.elements.append(task16)
+    
+    task17 = Task("Выложить товары на ленту")
+    shopping_lane.elements.append(task17)
+    
+    task18 = Task("Передать товары через сканер кассиру")
+    shopping_lane.elements.append(task18)
+    
+    task19 = Task("Прослушать итоговую сумму")
+    shopping_lane.elements.append(task19)
+    
+    # Шлюз проверки средств при оплате
+    gateway3 = Gateway("Достаточно ли средств?", gateway_type="exclusive")
+    shopping_lane.elements.append(gateway3)
+    
+    task20_yes = Task("Оплатить покупку")
+    shopping_lane.elements.append(task20_yes)
+    
+    task20_no = Task("Принять решение: отказаться от части товаров", task_type="user")
+    shopping_lane.elements.append(task20_no)
+    
+    task21 = Task("Упаковать товары в свои экосредства")
+    shopping_lane.elements.append(task21)
+    
+    task22 = Task("Проследовать до транспорта")
+    shopping_lane.elements.append(task22)
+    
+    task23 = Task("Добраться до дома")
+    shopping_lane.elements.append(task23)
+    
+    # === ДОРОЖКА 3: ЗАВЕРШЕНИЕ ===
+    
+    task24 = Task("Разместить купленные продукты на кухне для временного хранения")
+    completion_lane.elements.append(task24)
+    
+    # Подпроцесс обработки товаров (цикл)
+    processing_subprocess = Task("Процесс обработки и размещения товаров", task_type="subprocess")
+    processing_subprocess.documentation = "Многоэкземплярный цикл для каждой товарной позиции"
+    completion_lane.elements.append(processing_subprocess)
+    
+    # Задачи внутри подпроцесса обработки
+    task25_1 = Task("Извлечь товар из упаковки")
+    task25_2 = Task("Обработать товар (помыть, при необходимости)")
+    task25_3 = Gateway("Определить тип хранения товара", gateway_type="exclusive")
+    task25_4_cold = Task("Разместить в холодильнике/морозильнике")
+    task25_4_room = Task("Разместить в шкафу/на полке")
+    
+    task26 = Task("Утилизировать упаковку и чеки")
+    completion_lane.elements.append(task26)
+    
+    task27 = Task("Убрать сумки/тележки на место хранения")
+    completion_lane.elements.append(task27)
+    
+    # === КОНЕЧНОЕ СОБЫТИЕ ===
+    end_event = Event("Все купленные единицы находятся на своих местах в доме", event_type="end")
+    completion_lane.elements.append(end_event)
+    
+    # === СОЗДАЕМ ПОСЛЕДОВАТЕЛЬНОСТИ ПОТОКА ===
+    
+    # Дорожка 1
+    diagram.flows.extend([
+        SequenceFlow(start_event, task1),
+        SequenceFlow(task1, task2),
+        SequenceFlow(task2, task3),
+        SequenceFlow(task3, task4),
+        SequenceFlow(task4, task5),
+        SequenceFlow(task5, task6),
+        SequenceFlow(task6, gateway1),
+        SequenceFlow(gateway1, task7_yes, "Да"),
+        SequenceFlow(gateway1, task7_no, "Нет"),
+        SequenceFlow(task7_no, task7_yes),  # Возврат после решения проблемы
+        SequenceFlow(task7_yes, task8),
+        SequenceFlow(task8, task9)
+    ])
+    
+    # Переход к дорожке 2
+    diagram.flows.append(SequenceFlow(task9, task10))
+    
+    # Дорожка 2
+    diagram.flows.extend([
+        SequenceFlow(task10, task11),
+        SequenceFlow(task11, gateway2),
+        SequenceFlow(gateway2, task12_yes, "Да"),
+        SequenceFlow(gateway2, escalation_event, "Нет"),
+        SequenceFlow(escalation_event, task4),  # Возврат к выбору магазина
+        SequenceFlow(task12_yes, task13),
+        SequenceFlow(task13, shopping_subprocess),
+        SequenceFlow(shopping_subprocess, task15),
+        SequenceFlow(task15, task16),
+        SequenceFlow(task16, task17),
+        SequenceFlow(task17, task18),
+        SequenceFlow(task18, task19),
+        SequenceFlow(task19, gateway3),
+        SequenceFlow(gateway3, task20_yes, "Да"),
+        SequenceFlow(gateway3, task20_no, "Нет"),
+        SequenceFlow(task20_no, task18),  # Возврат к сканированию
+        SequenceFlow(task20_yes, task21),
+        SequenceFlow(task21, task22),
+        SequenceFlow(task22, task23)
+    ])
+    
+    # Переход к дорожке 3
+    diagram.flows.append(SequenceFlow(task23, task24))
+    
+    # Дорожка 3
+    diagram.flows.extend([
+        SequenceFlow(task24, processing_subprocess),
+        SequenceFlow(processing_subprocess, task26),
+        SequenceFlow(task26, task27),
+        SequenceFlow(task27, end_event)
+    ])
+    
+    return diagram
+
+def save_bpmn_to_file(diagram, filename):
+    """Сохраняет BPMN диаграмму в файл"""
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write(diagram.to_xml())
+    
+    print(f"BPMN диаграмма сохранена в файл: {filename}")
+
+def generate_bpmn_report(diagram):
+    """Генерирует текстовый отчет по BPMN диаграмме"""
+    report = []
+    report.append("=" * 80)
+    report.append("ОТЧЕТ ПО BPMN ДИАГРАММЕ: ПРОЦЕСС ПОХОДА В МАГАЗИН")
+    report.append("=" * 80)
+    report.append(f"Название: {diagram.name}")
+    report.append(f"Описание: {diagram.documentation}")
+    report.append(f"Дата генерации: {datetime.datetime.now()}")
+    report.append("")
+    
+    report.append("ЭЛЕМЕНТЫ ПРОЦЕССА:")
+    report.append("-" * 40)
+    
+    for pool in diagram.pools:
+        report.append(f"ПУЛ: {pool.name}")
+        for lane in pool.lanes:
+            report.append(f"  Дорожка: {lane.name}")
+            for element in lane.elements:
+                element_type = type(element).__name__
+                report.append(f"    - {element_type}: {element.name}")
+                if hasattr(element, 'documentation') and element.documentation:
+                    report.append(f"      Описание: {element.documentation}")
+    
+    report.append("")
+    report.append("ПОТОКИ УПРАВЛЕНИЯ:")
+    report.append("-" * 40)
+    for flow in diagram.flows:
+        condition = f" [Условие: {flow.condition}]" if hasattr(flow, 'condition') and flow.condition else ""
+        report.append(f"  {flow.source.name} -> {flow.target.name}{condition}")
+    
+    return "\n".join(report)
+
+# Создаем и сохраняем диаграмму
+if __name__ == "__main__":
+    # Создаем BPMN диаграмму
+    grocery_diagram = create_grocery_shopping_bpmn()
+    
+    # Сохраняем в XML файл
+    save_bpmn_to_file(grocery_diagram, "grocery_shopping_process.bpmn")
+    
+    # Генерируем отчет
+    report = generate_bpmn_report(grocery_diagram)
+    print(report)
+    
+    # Сохраняем отчет в файл
+    with open("grocery_shopping_report.txt", "w", encoding="utf-8") as f:
+        f.write(report)
+    
+    print("\nДополнительная информация:")
+    print("Для визуализации BPMN диаграммы:")
+    print("1. Используйте Camunda Modeler (https://camunda.com/download/modeler/)")
+    print("2. Или bpmn-js (https://bpmn.io/toolkit/bpmn-js/)")
+    print("3. Или загрузите файл grocery_shopping_process.bpmn в любой BPMN-редактор")
